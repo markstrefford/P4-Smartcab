@@ -18,23 +18,15 @@ class LearningAgent(Agent):
 
     def setup_states(self):
         states, count = pd.DataFrame(), 0
-        for planner_action in self.actions:
-            for lights in 'Red', 'Green':
-                for oncoming in self.actions:
-                    for left in self.actions:
-                        for right in self.actions:
-                            for agent_actions in self.actions:
-                                 # TODO: Determine initial "reward" values
-                                 state = pd.Series([planner_action, lights, oncoming, left, right, agent_actions, 0],
-                                                    index=['planner_action', 'lights', 'oncoming', 'left', 'right', 'agent_action', 'reward'])
-                                 states[count] = state
-                                 count = count + 1
+        states[0] = pd.DataFrame(p.dSeries('')
         return states
 
 
     def reset(self, destination=None):
         self.planner.route_to(destination)
         # TODO: Prepare for a new trip; reset any variables here, if required
+        self.states = self.setup_states()
+
 
     def update(self, t):
         # Gather inputs
@@ -42,8 +34,7 @@ class LearningAgent(Agent):
         inputs = self.env.sense(self)
         deadline = self.env.get_deadline(self)
 
-        # TODO: Update state
-        self.state = inputs
+        self.state = (self.next_waypoint, inputs)
 
         # TODO: Select action according to your policy
         action = random.choice(self.actions)  # Initial random movement

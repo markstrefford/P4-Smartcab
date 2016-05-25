@@ -22,7 +22,7 @@ class LearningAgent(Agent):
         self.states = self.setup_states()
 
     def setup_states(self):
-        self.states = []
+        self.states = dict()
 
     def determine_state_id(self, inputs, planner_action):
         if inputs == {'light': 'green', 'oncoming': None, 'right': None, 'left': None}:
@@ -43,8 +43,12 @@ class LearningAgent(Agent):
             state_id = 8
         else:
             state_id = 0 # Catch-all state that shouldn't really happen, but does occasionally!
-        print "State_id for these inputs is {}".format(state_id)
         return state_id
+
+    def normalise_agent_actions(self, action):
+        if action == None:
+            action = 'none'
+        return action
 
 
     def update(self, t):
@@ -53,8 +57,7 @@ class LearningAgent(Agent):
         inputs = self.env.sense(self)
         deadline = self.env.get_deadline(self)
 
-        self.state_id = self.determine_state_id(inputs, self.next_waypoint)
-        self.state = (self.state_id, inputs, self.next_waypoint)
+        self.state = self.determine_state_id(inputs, self.next_waypoint)
 
         # TODO: Select action according to your policy
         action = random.choice(self.actions)  # Initial random movement
@@ -63,6 +66,8 @@ class LearningAgent(Agent):
         reward = self.env.act(self, action)
 
         # TODO: Learn policy based on state, action, reward
+
+        self.states[self.state_id, self.normalise_agent_action(action)] = reward
 
         print "LearningAgent.update(): deadline = {}, inputs = {}, action = {}, reward = {}".format(deadline, inputs, action, reward)  # [debug]
         print "LearningAgent.update(): state = {}, waypoint = {}".format(self.state, self.next_waypoint)  # [debug]

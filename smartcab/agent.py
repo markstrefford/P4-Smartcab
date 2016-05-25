@@ -14,17 +14,23 @@ class LearningAgent(Agent):
         self.planner = RoutePlanner(self.env, self)  # simple route planner to get next_waypoint
         # TODO: Initialize any additional variables here
         self.actions = None, 'forward', 'left', 'right'
-        self.states = self.setup_states()
+        self.dict_actions = dict()   # Default dict for q-values
+        self.dict_actions = {'None':    self.set_initial_q(),
+                             'forward': self.set_initial_q(),
+                             'left':    self.set_initial_q(),
+                             'right':   self.set_initial_q()}
+        self.states = self.setup_states() # TODO - is this needed now?
+        self.q = dict()
 
     def reset(self, destination=None):
         self.planner.route_to(destination)
         # TODO: Prepare for a new trip; reset any variables here, if required
-        self.states = self.setup_states()
+        self.states = self.setup_states() # TODO - is this needed now?
 
     def setup_states(self):
         self.states = dict()
 
-    def determine_state_id(self, inputs, planner_action):
+    def determine_state(self, inputs, planner_action):
         if inputs == {'light': 'green', 'oncoming': None, 'right': None, 'left': None}:
             state_id = 1
         elif inputs == {'light': 'green', 'oncoming': 'forward', 'right': None, 'left': None} and planner_action == 'left':
@@ -45,11 +51,38 @@ class LearningAgent(Agent):
             state_id = 0 # Catch-all state that shouldn't really happen, but does occasionally!
         return state_id
 
-    def normalise_agent_actions(self, action):
-        if action == None:
-            action = 'none'
+    def determine_action(self, state, actions):
+        if state in self.q:
+            print "Determining optimal action based on {}".format(self.q[state])
+            # From http://stackoverflow.com/a/268350/1378071
+            # Assumes a single best action, or if not it'll take the first one
+            action = max(self.q[state], key=lambda k: self.q[state][k])
+            print "action {} based on q-value {} for state {}".format(action, self.q[state], state)
+        else:
+            # If we don't have a q-value for this state, then pick a random action
+            action = random.choice(actions)
+            print "action {} picked at random".format(action)
         return action
 
+    def set_initial_q(self):
+        #TODO - Determine optimal initialisation value
+        return 0
+
+    def update_q(self, current_value, reward):
+        #TODO: Implement stuff around alpha and gamma here???
+        new_q = reward
+        print "qvalue changing from {} to {}".format(current_value, new_q)
+        return new_q
+
+    def update_qvalue(self, state, action, reward):
+        if state in self.q:
+            if action in self.q[state]:
+                self.q[state][action] = self.update_q(self.q[state][action], reward)
+            else:
+                self.q[state][action] = self.set_initial_q()
+        else:
+            self.q[state] = dict()
+            self.q[state][action] = self.set_initial_q()
 
     def update(self, t):
         # Gather inputs
@@ -57,17 +90,19 @@ class LearningAgent(Agent):
         inputs = self.env.sense(self)
         deadline = self.env.get_deadline(self)
 
-        self.state = self.determine_state_id(inputs, self.next_waypoint)
+        self.state = self.determine_state(inputs, self.next_waypoint)
 
         # TODO: Select action according to your policy
-        action = random.choice(self.actions)  # Initial random movement
+        #action = random.choice(self.actions)  # Initial random movement
+        action = self.determine_action(self.state, self.actions)
 
         # Execute action and get reward
         reward = self.env.act(self, action)
 
         # TODO: Learn policy based on state, action, reward
-
-        self.states[self.state_id, self.normalise_agent_action(action)] = reward
+        # Start with simply storing the reward that we get - determine which one is best here!!
+        self.q[self.state] = reward
+        #self.states[self.state, str(action)] = reward
 
         print "LearningAgent.update(): deadline = {}, inputs = {}, action = {}, reward = {}".format(deadline, inputs, action, reward)  # [debug]
         print "LearningAgent.update(): state = {}, waypoint = {}".format(self.state, self.next_waypoint)  # [debug]

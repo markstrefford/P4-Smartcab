@@ -16,16 +16,33 @@ class LearningAgent(Agent):
         self.actions = None, 'forward', 'left', 'right'
         self.states = self.setup_states()
 
-    def setup_states(self):
-        states, count = pd.DataFrame(), 0
-        states[0] = pd.DataFrame(p.dSeries('')
-        return states
-
-
     def reset(self, destination=None):
         self.planner.route_to(destination)
         # TODO: Prepare for a new trip; reset any variables here, if required
         self.states = self.setup_states()
+
+    def setup_states(self):
+        self.states = []
+
+    def determine_state_id(self, inputs, planner_action):
+        if inputs == {'light': 'green', 'oncoming': None, 'right': None, 'left': None}:
+            self.state_id = 0
+        elif inputs == {'light': 'green', 'oncoming': 'forward', 'right': None, 'left': None} and planner_action == 'left':
+            self.state_id = 1
+        elif inputs == {'light': 'red', 'oncoming': None, 'right': None, 'left': None}:
+            self.state_id = 2
+        elif inputs == {'light': 'red', 'oncoming': None, 'right': None, 'left': None} and planner_action == 'right':
+            self.state_id = 3
+        elif inputs == {'light': 'red', 'oncoming': 'forward', 'right': None, 'left': None} and planner_action == 'left':
+            self.state_id = 4
+        elif inputs == {'light': 'red', 'oncoming': 'left', 'right': None, 'left': None} and planner_action == 'right':
+            self_state_id = 5
+        elif inputs == {'light': 'red', 'oncoming': None, 'right': forward, 'left': None}:
+            self.state_id = 6
+        elif inputs == {'light': 'red', 'oncoming': None, 'right': forward, 'left': 'forward'}:
+            self.state_id = 7
+
+
 
 
     def update(self, t):

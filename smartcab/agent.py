@@ -26,23 +26,25 @@ class LearningAgent(Agent):
 
     def determine_state_id(self, inputs, planner_action):
         if inputs == {'light': 'green', 'oncoming': None, 'right': None, 'left': None}:
-            self.state_id = 0
+            state_id = 1
         elif inputs == {'light': 'green', 'oncoming': 'forward', 'right': None, 'left': None} and planner_action == 'left':
-            self.state_id = 1
+            state_id = 2
         elif inputs == {'light': 'red', 'oncoming': None, 'right': None, 'left': None}:
-            self.state_id = 2
+            state_id = 3
         elif inputs == {'light': 'red', 'oncoming': None, 'right': None, 'left': None} and planner_action == 'right':
-            self.state_id = 3
+            state_id = 4
         elif inputs == {'light': 'red', 'oncoming': 'forward', 'right': None, 'left': None} and planner_action == 'left':
-            self.state_id = 4
+            state_id = 5
         elif inputs == {'light': 'red', 'oncoming': 'left', 'right': None, 'left': None} and planner_action == 'right':
-            self_state_id = 5
-        elif inputs == {'light': 'red', 'oncoming': None, 'right': forward, 'left': None}:
-            self.state_id = 6
-        elif inputs == {'light': 'red', 'oncoming': None, 'right': forward, 'left': 'forward'}:
-            self.state_id = 7
-
-
+            state_id = 6
+        elif inputs == {'light': 'red', 'oncoming': None, 'right': 'forward', 'left': None}:
+            state_id = 7
+        elif inputs == {'light': 'red', 'oncoming': None, 'right': 'forward', 'left': 'forward'}:
+            state_id = 8
+        else:
+            state_id = 0 # Catch-all state that shouldn't really happen, but does occasionally!
+        print "State_id for these inputs is {}".format(state_id)
+        return state_id
 
 
     def update(self, t):
@@ -51,7 +53,8 @@ class LearningAgent(Agent):
         inputs = self.env.sense(self)
         deadline = self.env.get_deadline(self)
 
-        self.state = (self.next_waypoint, inputs)
+        self.state_id = self.determine_state_id(inputs, self.next_waypoint)
+        self.state = (self.state_id, inputs, self.next_waypoint)
 
         # TODO: Select action according to your policy
         action = random.choice(self.actions)  # Initial random movement

@@ -13,7 +13,7 @@ class LearningAgent(Agent):
         self.color = 'red'  # override color
         self.planner = RoutePlanner(self.env, self)  # simple route planner to get next_waypoint
         # TODO: Initialize any additional variables here
-        self.actions = None, 'forward', 'left', 'right'
+        self.actions = [None, 'forward', 'left', 'right']
         self.dict_actions = dict()   # Default dict for q-values
         self.dict_actions = {'None':    self.set_initial_q(),
                              'forward': self.set_initial_q(),
@@ -54,12 +54,13 @@ class LearningAgent(Agent):
     def determine_action(self, state, actions):
         # We are adding qvalues based on an action, so there are times when we won't have any q-values defined
         # In that case then pick an action from the possible actions
-        possible_actions = self.actions
+        possible_actions = actions
         if state in self.q:
             print "Determining optimal action based on state {} and q-values {}".format(state, self.q[state])
             # From http://stackoverflow.com/a/268350/1378071
             # Assumes a single best action, or if not it'll take the first one
-            possible_actions = max(self.q[state], key=lambda k: self.q[state][k])
+            #possible_actions = max(self.q[state], key=lambda k: self.q[state][k])
+            possible_actions = [action for action, q in self.q[state].iteritems() if q == max(self.q[state].values())]
             print "possible actions {} based on q-value {} for state {}".format(possible_actions, self.q[state], state)
 
         action = random.choice(possible_actions)

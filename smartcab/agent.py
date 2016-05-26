@@ -52,16 +52,20 @@ class LearningAgent(Agent):
         return state_id
 
     def determine_action(self, state, actions):
+        # We are adding qvalues based on an action, so there are times when we won't have any q-values defined
+        # In that case then pick an action from the possible actions
+        possible_actions = self.actions
         if state in self.q:
-            print "Determining optimal action based on {}".format(self.q[state])
+            print "Determining optimal action based on state {} and q-values {}".format(state, self.q[state])
             # From http://stackoverflow.com/a/268350/1378071
             # Assumes a single best action, or if not it'll take the first one
-            action = max(self.q[state], key=lambda k: self.q[state][k])
-            print "action {} based on q-value {} for state {}".format(action, self.q[state], state)
-        else:
-            # If we don't have a q-value for this state, then pick a random action
-            action = random.choice(actions)
-            print "action {} picked at random".format(action)
+            possible_actions = max(self.q[state], key=lambda k: self.q[state][k])
+            print "possible actions {} based on q-value {} for state {}".format(possible_actions, self.q[state], state)
+
+        action = random.choice(possible_actions)
+        print "action {} picked from possible actions {}".format(action, possible_actions)
+        if action == 'None':
+            action = None
         return action
 
     def set_initial_q(self):
@@ -76,13 +80,14 @@ class LearningAgent(Agent):
 
     def update_qvalue(self, state, action, reward):
         if state in self.q:
-            if action in self.q[state]:
-                self.q[state][action] = self.update_q(self.q[state][action], reward)
-            else:
-                self.q[state][action] = self.set_initial_q()
+            print "Updating qvalue for state {} and action {} to {}".format(state, action, reward)
+            print "Before {}".format(self.q[state][action])
+            self.q[state][action] = self.update_q(self.q[state][action], reward)
+            print "After {}".format(self.q[state][action])
         else:
             self.q[state] = dict()
-            self.q[state][action] = self.set_initial_q()
+            self.q[state] = self.dict_actions
+            self.q[state][action] = self.update_q(self.q[state][action], reward)
 
     def update(self, t):
         # Gather inputs
@@ -101,8 +106,8 @@ class LearningAgent(Agent):
 
         # TODO: Learn policy based on state, action, reward
         # Start with simply storing the reward that we get - determine which one is best here!!
-        self.q[self.state] = reward
         #self.states[self.state, str(action)] = reward
+        self.update_qvalue(self.state, str(action), reward)
 
         print "LearningAgent.update(): deadline = {}, inputs = {}, action = {}, reward = {}".format(deadline, inputs, action, reward)  # [debug]
         print "LearningAgent.update(): state = {}, waypoint = {}".format(self.state, self.next_waypoint)  # [debug]

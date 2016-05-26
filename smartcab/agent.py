@@ -52,6 +52,7 @@ class LearningAgent(Agent):
         return state_id
 
     def determine_action(self, state, actions):
+        print "determine_action(): Current q values: {}".format(self.q)
         # We are adding qvalues based on an action, so there are times when we won't have any q-values defined
         # In that case then pick an action from the possible actions
         possible_actions = actions

@@ -55,7 +55,7 @@ class LearningAgent(Agent):
         # We are adding qvalues based on an action, so there are times when we won't have any q-values defined
         # In that case then pick an action from the possible actions
         possible_actions = actions
-        if state in self.q:
+        if state in self.q or random.random() < 0.2 :  # Try something new 20% of the time
             print "Determining optimal action based on state {} and q-values {}".format(state, self.q[state])
             # From http://stackoverflow.com/a/268350/1378071
             # Assumes a single best action, or if not it'll take the first one

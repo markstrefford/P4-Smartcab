@@ -3,6 +3,7 @@ from environment import Agent, Environment
 from planner import RoutePlanner
 from simulator import Simulator
 
+# TODO - Clarify logging over what is current state, previous state, next state, etc...
 
 class LearningAgent(Agent):
     """An agent that learns to drive in the smartcab world."""
@@ -20,18 +21,13 @@ class LearningAgent(Agent):
         self.states = dict()        # self.states[] is just the state key-value lookup table, so no actions or rewards here!!
         self.q = dict()             # self.q[] is where we hold the actions and rewards, the state is the key from self.states[] (so typically an int!)
         self.iteration = 0
-        self.prev_iteration = 0
-        self.prev_state, self.prev_action, self.prev_reward = {}, "", 0
+        self.prev_state, self.prev_action, self.prev_reward = None, None, 0
 
     def reset(self, destination=None):
         self.planner.route_to(destination)
         # TODO: Prepare for a new trip; reset any variables here, if required
-        self.iteration = 0  # TODO: Assume we do this every time for now...
-        self.prev_iteration = 0
-        self.prev_state = {}
-
-    def create_tuples(self, value):
-        return [(k, v) for (k, v) in value.iteritems()]
+        # self.iteration = 0  # TODO: Assume we do this every time for now... also see update() comments around iteration 0
+        self.prev_state, self.prev_action, self.prev_reward = None, None, 0
 
     def set_initial_q(self):
         #TODO - Determine optimal initialisation value
@@ -47,20 +43,36 @@ class LearningAgent(Agent):
                                       'right':self.set_initial_q()})
         return next_state_id
 
+    def find_state_id(self, state):
+        state_id = None
+        if [state in self.states.values()] == [True]:
+            for i, s in self.states.iteritems():
+                if state == s:
+                    state_id = i
+        return state_id
 
-    # This function just sets the s, a, and r
     def update_qvalue(self, state, action, reward):
         print "update_qvalue(): state = {}".format(state)
         # 1st check whether we've seen this state before
-        if [ state in self.states ] == True:
-            for id, s in self.states.iteritems():
-                if state == s:
-                    self.q[id][action] = reward
+        state_id = self.find_state_id(state)
+        if state_id is not None:
+            self.q[state_id][action] = reward
         else:
-            id = self.new_state(state)
-            self.q[id][action] = reward
+            state_id = self.new_state(state)
+            self.q[state_id][action] = reward
             # TODO - set up default q-values for actions, etc???
-        print "update_qvalue(): Updated the qvalues based on state {} id {}".format(state, id)
+        print "update_qvalue(): Updated the qvalues based on state {} id {}".format(state, state_id)
+
+    def choose_action(self, state):
+        state_id = self.find_state_id(state)
+        if state_id is None:
+            action = random.choice(self.possible_actions)
+            print "choose_action(): Not seen this state before, picking random action {}".format(action)
+        else:
+            # TODO - Worry about exploitation vs exploration later!!
+            action = random.choice(self.possible_actions)
+            print "choose_action(): Seen this state before, picking best action {}".format(action)
+        return action
 
     #
     # 1) Sense the environment (see what changes occur naturally in the environment) - store it as state_0
@@ -77,15 +89,20 @@ class LearningAgent(Agent):
     # So I need to pass in a state (s), an action taken (a) and a reward (r) for taking that action
     # But I am currently in a new state (s'), so really what is passed into update_qvalue() is the previous s, a, r
     def update(self, t):
-        print "update(): Iteration {}".format(self.iteration)
+        print "***********************************\nupdate(): Iteration {}".format(self.iteration)
         # Gather inputs
         self.next_waypoint = self.planner.next_waypoint()  # from route planner, also displayed by simulator
         inputs = self.env.sense(self)
         deadline = self.env.get_deadline(self)
 
         # TODO: Update state
-        self.state = (("lights", inputs['light']), ('oncoming', inputs['oncoming']), ('right', inputs['right']), ('left', inputs['left']), ("waypoint", self.next_waypoint))
+        self.state = (("lights", inputs['light']),
+                      ('oncoming', inputs['oncoming']),
+                      ('right', inputs['right']),
+                      ('left', inputs['left']),
+                      ("waypoint", self.next_waypoint))
         if self.iteration == 0:
+            # TODO - Is this only required in the very first run ever? Or for the first iteration of every run?
             self.new_state(self.state)
         else:
             print "update(): Now updating state {}".format(self.iteration, self.prev_state)
@@ -93,18 +110,17 @@ class LearningAgent(Agent):
             self.update_qvalue(self.prev_state, self.prev_action, self.prev_reward)
 
         # TODO: Select action according to your policy
-        action = random.choice(self.possible_actions)
+        #action = random.choice(self.possible_actions)
+        action = self.choose_action(self.state)
 
         # Execute action and get reward
         reward = self.env.act(self, action)
 
         # Save this state, etc. for the next iteration as prev_state
-        self.prev_iteration = self.iteration # So we can update the previous iteration (TODO - do we need this?)
         self.iteration = self.iteration + 1  # Let's keep a count for now
         self.prev_state = self.state
         self.prev_action = action
         self.prev_reward = reward
-
 
         # TODO: Learn policy based on state, action, reward
 

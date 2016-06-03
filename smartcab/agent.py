@@ -70,7 +70,11 @@ class LearningAgent(Agent):
             print "choose_action(): Not seen this state before, picking random action {}".format(action)
         else:
             # TODO - Worry about exploitation vs exploration later!!
-            action = random.choice(self.possible_actions)
+            print "choose_action(): Seen this state before, here's the q-values {}".format(self.q[state_id])
+            best_actions = [action for action, q in self.q[state_id].iteritems() if q == max(self.q[state_id].values())]
+            print "possible actions {} based on q-value {} for state {}".format(best_actions, self.q[state_id], state)
+            action = random.choice(best_actions)
+            if action == "None": action = None
             print "choose_action(): Seen this state before, picking best action {}".format(action)
         return action
 

@@ -37,7 +37,7 @@ class LearningAgent(Agent):
         print "new_state(): state = {}".format(state)
         next_state_id = len(self.states)
         self.states[next_state_id] = state
-        self.q[next_state_id] = dict({'None':self.set_initial_q(),
+        self.q[next_state_id] = dict({None:self.set_initial_q(),
                                       'forward':self.set_initial_q(),
                                       'left':self.set_initial_q(),
                                       'right':self.set_initial_q()})
@@ -92,6 +92,7 @@ class LearningAgent(Agent):
     # and if it doesn't then create a new state with default action/rewards
     # So I need to pass in a state (s), an action taken (a) and a reward (r) for taking that action
     # But I am currently in a new state (s'), so really what is passed into update_qvalue() is the previous s, a, r
+    #
     def update(self, t):
         print "***********************************\nupdate(): Iteration {}".format(self.iteration)
         # Gather inputs
@@ -109,7 +110,6 @@ class LearningAgent(Agent):
             # TODO - Is this only required in the very first run ever? Or for the first iteration of every run?
             self.new_state(self.state)
         else:
-            print "update(): Now updating state {}".format(self.iteration, self.prev_state)
             # Now we know the reward for a specific action, we can update the previous state with what we know
             self.update_qvalue(self.prev_state, self.prev_action, self.prev_reward)
 

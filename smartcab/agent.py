@@ -14,10 +14,6 @@ class LearningAgent(Agent):
         self.planner = RoutePlanner(self.env, self)  # simple route planner to get next_waypoint
         # TODO: Initialize any additional variables here
         self.possible_actions = [None, 'forward', 'left', 'right']
-        # self.init_actions_rewards = dict({'None': self.set_initial_q(),
-        #                      'forward': self.set_initial_q(),
-        #                      'left': self.set_initial_q(),
-        #                      'right': self.set_initial_q()})
         self.states = dict()        # self.states[] is just the state key-value lookup table, so no actions or rewards here!!
         self.q = dict()             # self.q[] is where we hold the actions and rewards, the state is the key from self.states[] (so typically an int!)
         self.iteration = 0
@@ -26,7 +22,6 @@ class LearningAgent(Agent):
     def reset(self, destination=None):
         self.planner.route_to(destination)
         # TODO: Prepare for a new trip; reset any variables here, if required
-        # self.iteration = 0  # TODO: Assume we do this every time for now... also see update() comments around iteration 0
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
 
     def set_initial_q(self):
@@ -35,13 +30,13 @@ class LearningAgent(Agent):
 
     def new_state(self, state):
         print "new_state(): state = {}".format(state)
-        next_state_id = len(self.states)
-        self.states[next_state_id] = state
-        self.q[next_state_id] = dict({None:self.set_initial_q(),
+        new_state_id = len(self.states)
+        self.states[new_state_id] = state
+        self.q[new_state_id] = dict({None:self.set_initial_q(),
                                       'forward':self.set_initial_q(),
                                       'left':self.set_initial_q(),
                                       'right':self.set_initial_q()})
-        return next_state_id
+        return new_state_id
 
     def find_state_id(self, state):
         state_id = None
@@ -52,8 +47,6 @@ class LearningAgent(Agent):
         return state_id
 
     def update_qvalue(self, state, action, reward):
-        print "update_qvalue(): state = {}".format(state)
-        # 1st check whether we've seen this state before
         state_id = self.find_state_id(state)
         if state_id is not None:
             self.q[state_id][action] = reward
@@ -64,18 +57,15 @@ class LearningAgent(Agent):
         print "update_qvalue(): Updated the qvalues based on state {} id {}".format(state, state_id)
 
     def choose_action(self, state):
+        best_actions = self.possible_actions
         state_id = self.find_state_id(state)
-        if state_id is None:
-            action = random.choice(self.possible_actions)
-            print "choose_action(): Not seen this state before, picking random action {}".format(action)
-        else:
+        if state_id is not None:
             # TODO - Worry about exploitation vs exploration later!!
             print "choose_action(): Seen this state before, here's the q-values {}".format(self.q[state_id])
             best_actions = [action for action, q in self.q[state_id].iteritems() if q == max(self.q[state_id].values())]
             print "possible actions {} based on q-value {} for state {}".format(best_actions, self.q[state_id], state)
-            action = random.choice(best_actions)
-            if action == "None": action = None
-            print "choose_action(): Seen this state before, picking best action {}".format(action)
+        action = random.choice(best_actions)
+        print "choose_action(): Action to take {}".format(action)
         return action
 
     #
@@ -113,15 +103,14 @@ class LearningAgent(Agent):
             # Now we know the reward for a specific action, we can update the previous state with what we know
             self.update_qvalue(self.prev_state, self.prev_action, self.prev_reward)
 
-        # TODO: Select action according to your policy
-        #action = random.choice(self.possible_actions)
+        # Select action according to your policy
         action = self.choose_action(self.state)
 
         # Execute action and get reward
         reward = self.env.act(self, action)
 
         # Save this state, etc. for the next iteration as prev_state
-        self.iteration = self.iteration + 1  # Let's keep a count for now
+        self.iteration = self.iteration + 1  # Let's keep a count
         self.prev_state = self.state
         self.prev_action = action
         self.prev_reward = reward

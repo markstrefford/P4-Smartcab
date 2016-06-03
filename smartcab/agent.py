@@ -18,11 +18,14 @@ class LearningAgent(Agent):
         self.q = dict()             # self.q[] is where we hold the actions and rewards, the state is the key from self.states[] (so typically an int!)
         self.iteration = 0
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
+        self.net_reward = 0
+        self.explore_exploit = 0.2
 
     def reset(self, destination=None):
         self.planner.route_to(destination)
         # TODO: Prepare for a new trip; reset any variables here, if required
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
+        self.net_reward = 0
 
     def set_initial_q(self):
         #TODO - Determine optimal initialisation value
@@ -57,10 +60,13 @@ class LearningAgent(Agent):
         print "update_qvalue(): Updated the qvalues based on state {} id {}".format(state, state_id)
 
     def choose_action(self, state):
+        explore = random.random()
+        print "choose_action(): explore/exploit value = {}".format(explore)
         best_actions = self.possible_actions
         state_id = self.find_state_id(state)
-        if state_id is not None:
+        if state_id is not None and explore > self.explore_exploit:    # We know the state but sometimes we pick a random action
             # TODO - Worry about exploitation vs exploration later!!
+            print "update_action(): Known state or explore for q-values {}".format(self.q[state_id])
             best_actions = [action for action, q in self.q[state_id].iteritems() if q == max(self.q[state_id].values())]
             print "possible actions {} based on q-value {} for state {}".format(best_actions, self.q[state_id], state)
         action = random.choice(best_actions)
@@ -107,6 +113,7 @@ class LearningAgent(Agent):
 
         # Execute action and get reward
         reward = self.env.act(self, action)
+        self.net_reward = self.net_reward + reward
 
         # Save this state, etc. for the next iteration as prev_state
         self.iteration = self.iteration + 1  # Let's keep a count
@@ -116,9 +123,8 @@ class LearningAgent(Agent):
 
         # TODO: Learn policy based on state, action, reward
 
-        print "LearningAgent.update(): deadline = {}, inputs = {}, action = {}, reward = {}".format(deadline, inputs,
-                                                                                                    action,
-                                                                                                    reward)  # [debug]
+        print "LearningAgent.update(): deadline = {}, inputs = {}, action = {}, reward = {}, net_reward = {}"\
+            .format(deadline, inputs, action, reward, self.net_reward)  # [debug]
 
 
 def run():

@@ -61,7 +61,6 @@ class LearningAgent(Agent):
         state_id = self.find_state_id(state)
         if state_id is not None:
             # TODO - Worry about exploitation vs exploration later!!
-            print "choose_action(): Seen this state before, here's the q-values {}".format(self.q[state_id])
             best_actions = [action for action, q in self.q[state_id].iteritems() if q == max(self.q[state_id].values())]
             print "possible actions {} based on q-value {} for state {}".format(best_actions, self.q[state_id], state)
         action = random.choice(best_actions)

@@ -2,6 +2,7 @@ import random
 from environment import Agent, Environment
 from planner import RoutePlanner
 from simulator import Simulator
+import pandas as pd     # For trial statistics
 
 # TODO - Clarify logging over what is current state, previous state, next state, etc...
 
@@ -18,16 +19,20 @@ class LearningAgent(Agent):
         self.q = dict()             # self.q[] is where we hold the actions and rewards, the state is the key from self.states[] (so typically an int!)
         self.iteration = 0
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
-        self.net_reward = 0
         self.epsilon = 0.8          # If we know the state, go with it 80% of the time. Pick a random action 20% of the time
         self.alpha, self.gamma = 0.5, 0.5
         self.initial_q_value = 3    # Set deliberately high compared to rewards in order to force the agent to try different actions until all have been tried
+        self.policy = 'q'           # Can force a policy: 'q' = use q-learning, 'r' = random (useful for benchmarking later!)
+        # Keep track of stats of different trials to see how this behaves
+        self.agent_trial_count = 0  # Would need to add code to environment.py to get it's count of the trial, so added it here instead!
+        self.stats=pd.DataFrame(pd.Series({'trial': self.agent_trial_count, 'net_reward':0, 'penalty_count':0, 'time_taken':0}))
 
     def reset(self, destination=None):
         self.planner.route_to(destination)
         # TODO: Prepare for a new trip; reset any variables here, if required
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
-        self.net_reward = 0
+        self.agent_trial_count += 1
+        self.stats[self.agent_trial_count]=pd.Series({'trial': self.agent_trial_count, 'net_reward':0, 'penalty_count':0, 'time_taken':0})
 
     def set_initial_q(self):
         return self.initial_q_value
@@ -120,18 +125,23 @@ class LearningAgent(Agent):
 
         # Execute action and get reward
         reward = self.env.act(self, action)
-        self.net_reward = self.net_reward + reward
 
         # Save this state, etc. for the next iteration as prev_state
-        self.iteration = self.iteration + 1  # Let's keep a count
+        self.iteration += 1  # Let's keep a count
         self.prev_state = self.state
         self.prev_action = action
         self.prev_reward = reward
 
+        # Update stats for this run
+        self.stats[self.agent_trial_count]['net_reward'] += reward
+        self.stats[self.agent_trial_count]['time_taken'] += 1
+        if reward < 0:
+            self.stats[self.agent_trial_count]['penalty_count'] += 1
+
         # TODO: Learn policy based on state, action, reward
 
-        print "LearningAgent.update(): deadline = {}, inputs = {}, action = {}, reward = {}, net_reward = {}"\
-            .format(deadline, inputs, action, reward, self.net_reward)  # [debug]
+        print "LearningAgent.update(): deadline = {}, inputs = {}, action = {}, reward = {}, net_reward = {}, penalties = {}"\
+            .format(deadline, inputs, action, reward, self.stats[self.agent_trial_count]['net_reward'], self.stats[self.agent_trial_count]['penalty_count'])  # [debug]
 
 
 def run():
@@ -150,6 +160,8 @@ def run():
     sim.run(n_trials=100)  # run for a specified number of trials
     # NOTE: To quit midway, press Esc or close pygame window, or hit Ctrl+C on the command-line
 
+    # Assuming these are availabe, print out all of the stats!
+    print e.stats
 
 if __name__ == '__main__':
     run()

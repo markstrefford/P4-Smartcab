@@ -21,7 +21,7 @@ class LearningAgent(Agent):
         self.start_alpha, self.start_gamma = 0.75, 0.5    # Start with a higher learning rate alpha
         self.alpha, self.gamma = self.start_alpha, self.start_gamma
         self.initial_q_value = 3    # Set deliberately high compared to rewards in order to force the agent to try different actions until all have been tried
-        self.policy = 'q'           # Can force a policy: 'q' = use q-learning, 'r' = random (useful for benchmarking later!)
+        self.policy = 'q'           # Can force a policy: 'q' = use q-learning, any other value will force a random action each time (useful for benchmarking later)
         # Keep track of stats of different trials to see how this behaves
         self.agent_trial_count = 0  # Would need to add code to environment.py to get it's count of the trial, so added it here instead!
         self.init_stats = { 'net_reward':0, 'penalty_count':0 , 'alpha':self.alpha, 'gamma':self.gamma, 'time_taken':0, 'success': False, 'cumulative_success_rate': 0.0}
@@ -33,25 +33,27 @@ class LearningAgent(Agent):
         self.planner.route_to(destination)
         # TODO: Prepare for a new trip; reset any variables here, if required
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
-
         # Update and print statistics for this run
         if self.agent_trial_count != 0:         # This is called on run 0 as well, so ignore as we've done this once!!
-            # n_passed = student_data.passed.apply(pd.value_counts).yes.sum()
-            # n_failed = student_data.passed.apply(pd.value_counts).no.sum()
-            self.success_count += self.stats['success']
-            success_rate = float(self.success_count) / float(self.agent_trial_count) * 100
-            self.stats['cumulative_success_rate'] = success_rate
-            self.summary_stats[self.agent_trial_count] = self.stats
-            print "***********************************" \
-              "\nStatistics: Trial {}" \
-              "\n{}" \
-              "\nSuccess rate : {}%" \
-              "\n***********************************".format(self.agent_trial_count, self.summary_stats, success_rate)
-            self.stats=pd.Series(self.init_stats)
-            self.alpha, self.gamma = self.update_learning_rates(self.agent_trial_count, self.start_alpha, self.start_gamma)
-            self.stats['alpha'] = self.alpha    # As this and gamma vary between trials and not sure if the above takes original values!!
-            self.stats['gamma'] = self.gamma
+            self.update_and_print_stats()
         self.agent_trial_count += 1
+
+    def update_and_print_stats(self):
+        # n_passed = student_data.passed.apply(pd.value_counts).yes.sum()
+        # n_failed = student_data.passed.apply(pd.value_counts).no.sum()
+        self.success_count += self.stats['success']
+        success_rate = float(self.success_count) / float(self.agent_trial_count) * 100
+        self.stats['cumulative_success_rate'] = success_rate
+        self.summary_stats[self.agent_trial_count] = self.stats
+        print "***********************************" \
+          "\nStatistics: Trial {}" \
+          "\n{}" \
+          "\nSuccess rate : {}%" \
+          "\n***********************************".format(self.agent_trial_count, self.summary_stats, success_rate)
+        self.stats=pd.Series(self.init_stats)
+        self.alpha, self.gamma = self.update_learning_rates(self.agent_trial_count, self.start_alpha, self.start_gamma)
+        self.stats['alpha'] = self.alpha    # As this and gamma vary between trials and not sure if the above takes original values!!
+        self.stats['gamma'] = self.gamma
 
     def update_learning_rates(self, trial, alpha, gamma):
         return alpha/trial, gamma
@@ -99,7 +101,7 @@ class LearningAgent(Agent):
     def choose_action(self, state):
         best_actions = self.possible_actions
         state_id = self.find_state_id(state)
-        if state_id is not None and random.random() < self.epsilon:    # We know the state but sometimes we pick a random action
+        if state_id is not None and random.random() < self.epsilon and self.policy == 'q':    # We know the state but sometimes we pick a random action, and the policy is q-value
             #print "update_action(): Known state or explore for q-values {}".format(self.q[state_id])
             best_actions = [action for action, q in self.q[state_id].iteritems() if q == max(self.q[state_id].values())]
             #print "possible actions {} based on q-value {} for state {}".format(best_actions, self.q[state_id], state)

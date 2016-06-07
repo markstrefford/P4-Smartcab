@@ -21,7 +21,7 @@ class LearningAgent(Agent):
         self.net_reward = 0
         self.epsilon = 0.8          # If we know the state, go with it 80% of the time. Pick a random action 20% of the time
         self.alpha, self.gamma = 0.5, 0.5
-        self.initial_q_value = 3    # Set deliberately high to force the agent to try different actions until all have been tried
+        self.initial_q_value = 3    # Set deliberately high compared to rewards in order to force the agent to try different actions until all have been tried
 
     def reset(self, destination=None):
         self.planner.route_to(destination)
@@ -62,11 +62,8 @@ class LearningAgent(Agent):
     def update_qvalue(self, state, action, reward, state_):
         state_id = self.find_state_id(state)
         if state_id is not None:
-            #self.q[state_id][action] = reward
             # Based on this formula https://discourse-cdn.global.ssl.fastly.net/udacity/uploads/default/original/3X/1/1/117c62ab1154fa84b606b8db21f992804203bae6.png
-            #print "update_qvalue(): Old value = {}".format(self.q[state_id][action])
             self.q[state_id][action] = self.q[state_id][action] + self.alpha * (reward + self.gamma * self.max_over_a(state_) - self.q[state_id][action])
-            #print "update_qvalue(): New value = {}".format(self.q[state_id][action])
         else:
             state_id = self.new_state(state)
             self.q[state_id][action] = reward
@@ -112,10 +109,10 @@ class LearningAgent(Agent):
                       ('left', inputs['left']),
                       ("waypoint", self.next_waypoint))
         if self.iteration == 0:
-            # TODO - Is this only required in the very first run ever? Or for the first iteration of every run?
             self.new_state(self.state)
         else:
             # Now we know the reward for a specific action, we can update the previous state with what we know
+            # Previous state is the state s in which we took action a to get reward r and put us in current state s'
             self.update_qvalue(self.prev_state, self.prev_action, self.prev_reward, self.state)
 
         # Select action according to your policy

@@ -59,7 +59,9 @@ class LearningAgent(Agent):
         if state_id is not None:
             #self.q[state_id][action] = reward
             # Based on this formula https://discourse-cdn.global.ssl.fastly.net/udacity/uploads/default/original/3X/1/1/117c62ab1154fa84b606b8db21f992804203bae6.png
+            #print "update_qvalue(): Old value = {}".format(self.q[state_id][action])
             self.q[state_id][action] = self.q[state_id][action] + self.alpha * (reward + self.gamma * self.max_over_a(state_id) - self.q[state_id][action])
+            #print "update_qvalue(): New value = {}".format(self.q[state_id][action])
         else:
             state_id = self.new_state(state)
             self.q[state_id][action] = reward

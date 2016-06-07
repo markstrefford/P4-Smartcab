@@ -23,9 +23,8 @@ class LearningAgent(Agent):
         self.policy = 'q'           # Can force a policy: 'q' = use q-learning, 'r' = random (useful for benchmarking later!)
         # Keep track of stats of different trials to see how this behaves
         self.agent_trial_count = 0  # Would need to add code to environment.py to get it's count of the trial, so added it here instead!
-        self.init_stats={'trial':0, 'net_reward':0, 'penalty_count':0 , 'alpha':self.alpha, 'gamma':self.gamma, 'time_taken':0}
+        self.init_stats={'net_reward':0, 'penalty_count':0 , 'alpha':self.alpha, 'gamma':self.gamma, 'time_taken':0}
         self.stats=(pd.Series(self.init_stats))
-        self.stats['trial'] = self.agent_trial_count
 
     def reset(self, destination=None):
         self.planner.route_to(destination)
@@ -33,15 +32,15 @@ class LearningAgent(Agent):
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
 
         # Update and print statistics for this run
-        print "***********************************" \
-              "\nPrevious statistics: " \
+        if self.agent_trial_count != 0:         # This is called on run 0 as well, so ignore as we've done this once!!
+            print "***********************************" \
+              "\nStatistics: Trial {}" \
               "\n{}" \
-              "\n***********************************".format(self.stats)
+              "\n***********************************".format(self.agent_trial_count, self.stats)
+            self.stats=pd.Series(self.init_stats)
+            self.stats['alpha'] = self.alpha    # As this and gamma vary between trials
+            self.stats['gamma'] = self.gamma
         self.agent_trial_count += 1
-        self.stats=pd.Series(self.init_stats)
-        self.stats['trial'] = self.agent_trial_count
-        self.stats['alpha'] = self.alpha    # As this and gamma vary between trials
-        self.stats['gamma'] = self.gamma
 
     def set_initial_q(self):
         return self.initial_q_value
@@ -170,7 +169,7 @@ def run():
     sim = Simulator(e, update_delay=0, display=False)  # create simulator (uses pygame when display=True, if available)
     # NOTE: To speed up simulation, reduce update_delay and/or set display=False
 
-    sim.run(n_trials=10)  # run for a specified number of trials
+    sim.run(n_trials=100)  # run for a specified number of trials
     # NOTE: To quit midway, press Esc or close pygame window, or hit Ctrl+C on the command-line
 
 if __name__ == '__main__':

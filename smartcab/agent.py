@@ -4,8 +4,6 @@ from planner import RoutePlanner
 from simulator import Simulator
 import pandas as pd     # For trial statistics
 
-# TODO - Clarify logging over what is current state, previous state, next state, etc...
-
 class LearningAgent(Agent):
     """An agent that learns to drive in the smartcab world."""
 
@@ -25,14 +23,23 @@ class LearningAgent(Agent):
         self.policy = 'q'           # Can force a policy: 'q' = use q-learning, 'r' = random (useful for benchmarking later!)
         # Keep track of stats of different trials to see how this behaves
         self.agent_trial_count = 0  # Would need to add code to environment.py to get it's count of the trial, so added it here instead!
-        self.stats=pd.DataFrame(pd.Series({'trial': self.agent_trial_count, 'net_reward':0, 'penalty_count':0, 'time_taken':0}))
+        self.init_stats={'trial':0, 'net_reward':0, 'penalty_count':0 , 'alpha':self.alpha, 'gamma':self.gamma, 'time_taken':0}
+        self.stats=(pd.Series(self.init_stats))
+        self.stats['trial'] = self.agent_trial_count
 
     def reset(self, destination=None):
         self.planner.route_to(destination)
         # TODO: Prepare for a new trip; reset any variables here, if required
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
+
+        # Update and print statistics for this run
+        print "***** Previous statistics: " \
+              "\n{}".format(self.stats)
         self.agent_trial_count += 1
-        self.stats[self.agent_trial_count]=pd.Series({'trial': self.agent_trial_count, 'net_reward':0, 'penalty_count':0, 'time_taken':0})
+        self.stats=pd.Series(self.init_stats)
+        self.stats['trial'] = self.agent_trial_count
+        self.stats['alpha'] = self.alpha    # As this and gamma vary between trials
+        self.stats['gamma'] = self.gamma
 
     def set_initial_q(self):
         return self.initial_q_value
@@ -85,6 +92,9 @@ class LearningAgent(Agent):
         print "choose_action(): Action to take {}".format(action)
         return action
 
+    def get_state(self):
+        return self.stats
+
     #
     # 1) Sense the environment (see what changes occur naturally in the environment) - store it as state_0
     # 2) Take an action/reward - store as action_0 & reward_0
@@ -133,15 +143,15 @@ class LearningAgent(Agent):
         self.prev_reward = reward
 
         # Update stats for this run
-        self.stats[self.agent_trial_count]['net_reward'] += reward
-        self.stats[self.agent_trial_count]['time_taken'] += 1
+        self.stats['net_reward'] += reward
+        self.stats['time_taken'] += 1
         if reward < 0:
-            self.stats[self.agent_trial_count]['penalty_count'] += 1
+            self.stats['penalty_count'] += 1
 
         # TODO: Learn policy based on state, action, reward
 
         print "LearningAgent.update(): deadline = {}, inputs = {}, action = {}, reward = {}, net_reward = {}, penalties = {}"\
-            .format(deadline, inputs, action, reward, self.stats[self.agent_trial_count]['net_reward'], self.stats[self.agent_trial_count]['penalty_count'])  # [debug]
+            .format(deadline, inputs, action, reward, self.stats['net_reward'], self.stats['penalty_count'])  # [debug]
 
 
 def run():
@@ -154,14 +164,12 @@ def run():
     # NOTE: You can set enforce_deadline=False while debugging to allow longer trials
 
     # Now simulate it
-    sim = Simulator(e, update_delay=0.5, display=True)  # create simulator (uses pygame when display=True, if available)
+    #sim = Simulator(e, update_delay=0.5, display=True)  # create simulator (uses pygame when display=True, if available)
+    sim = Simulator(e, update_delay=0, display=False)  # create simulator (uses pygame when display=True, if available)
     # NOTE: To speed up simulation, reduce update_delay and/or set display=False
 
-    sim.run(n_trials=100)  # run for a specified number of trials
+    sim.run(n_trials=10)  # run for a specified number of trials
     # NOTE: To quit midway, press Esc or close pygame window, or hit Ctrl+C on the command-line
-
-    # Assuming these are availabe, print out all of the stats!
-    print e.stats
 
 if __name__ == '__main__':
     run()

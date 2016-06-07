@@ -19,7 +19,9 @@ class LearningAgent(Agent):
         self.iteration = 0
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
         self.net_reward = 0
-        self.explore_exploit = 0.2
+        self.epsilon = 0.8          # If we know the state, go with it 80% of the time. Pick a random action 20% of the time
+        self.alpha, self.gamma = 0.5, 0.5
+        self.initial_q_value = 3    # Set deliberately high to force the agent to try different actions until all have been tried
 
     def reset(self, destination=None):
         self.planner.route_to(destination)
@@ -28,8 +30,7 @@ class LearningAgent(Agent):
         self.net_reward = 0
 
     def set_initial_q(self):
-        #TODO - Determine optimal initialisation value
-        return 0
+        return self.initial_q_value
 
     def new_state(self, state):
         print "new_state(): state = {}".format(state)
@@ -49,23 +50,25 @@ class LearningAgent(Agent):
                     state_id = i
         return state_id
 
+    def max_over_a(self, state ):
+        # TODO - Determine maximum q-value from possible states reachable from this current state...
+        return 0
+
     def update_qvalue(self, state, action, reward):
         state_id = self.find_state_id(state)
         if state_id is not None:
-            self.q[state_id][action] = reward
+            #self.q[state_id][action] = reward
+            # Based on this formula https://discourse-cdn.global.ssl.fastly.net/udacity/uploads/default/original/3X/1/1/117c62ab1154fa84b606b8db21f992804203bae6.png
+            self.q[state_id][action] = self.q[state_id][action] + self.alpha * (reward + self.gamma * self.max_over_a(state_id) - self.q[state_id][action])
         else:
             state_id = self.new_state(state)
             self.q[state_id][action] = reward
-            # TODO - set up default q-values for actions, etc???
         print "update_qvalue(): Updated the qvalues based on state {} id {}".format(state, state_id)
 
     def choose_action(self, state):
-        explore = random.random()
-        print "choose_action(): explore/exploit value = {}".format(explore)
         best_actions = self.possible_actions
         state_id = self.find_state_id(state)
-        if state_id is not None and explore > self.explore_exploit:    # We know the state but sometimes we pick a random action
-            # TODO - Worry about exploitation vs exploration later!!
+        if state_id is not None and random.random() < self.epsilon:    # We know the state but sometimes we pick a random action
             print "update_action(): Known state or explore for q-values {}".format(self.q[state_id])
             best_actions = [action for action, q in self.q[state_id].iteritems() if q == max(self.q[state_id].values())]
             print "possible actions {} based on q-value {} for state {}".format(best_actions, self.q[state_id], state)

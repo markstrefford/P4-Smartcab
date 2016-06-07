@@ -50,17 +50,22 @@ class LearningAgent(Agent):
                     state_id = i
         return state_id
 
-    def max_over_a(self, state ):
-        # TODO - Determine maximum q-value from possible states reachable from this current state...
-        return 0
+    def max_over_a(self, state_):
+        state_id_ = self.find_state_id(state_)   # This is s'
+        if state_id_ is not None:
+            qMax = max(self.q[state_id_].values())
+        else:
+            qMax = self.initial_q_value
+        print "max_over_a(): s'({}) = {}".format(state_, qMax)
+        return qMax
 
-    def update_qvalue(self, state, action, reward):
+    def update_qvalue(self, state, action, reward, state_):
         state_id = self.find_state_id(state)
         if state_id is not None:
             #self.q[state_id][action] = reward
             # Based on this formula https://discourse-cdn.global.ssl.fastly.net/udacity/uploads/default/original/3X/1/1/117c62ab1154fa84b606b8db21f992804203bae6.png
             #print "update_qvalue(): Old value = {}".format(self.q[state_id][action])
-            self.q[state_id][action] = self.q[state_id][action] + self.alpha * (reward + self.gamma * self.max_over_a(state_id) - self.q[state_id][action])
+            self.q[state_id][action] = self.q[state_id][action] + self.alpha * (reward + self.gamma * self.max_over_a(state_) - self.q[state_id][action])
             #print "update_qvalue(): New value = {}".format(self.q[state_id][action])
         else:
             state_id = self.new_state(state)
@@ -111,7 +116,7 @@ class LearningAgent(Agent):
             self.new_state(self.state)
         else:
             # Now we know the reward for a specific action, we can update the previous state with what we know
-            self.update_qvalue(self.prev_state, self.prev_action, self.prev_reward)
+            self.update_qvalue(self.prev_state, self.prev_action, self.prev_reward, self.state)
 
         # Select action according to your policy
         action = self.choose_action(self.state)

@@ -33,8 +33,10 @@ class LearningAgent(Agent):
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
 
         # Update and print statistics for this run
-        print "***** Previous statistics: " \
-              "\n{}".format(self.stats)
+        print "***********************************" \
+              "\nPrevious statistics: " \
+              "\n{}" \
+              "\n***********************************".format(self.stats)
         self.agent_trial_count += 1
         self.stats=pd.Series(self.init_stats)
         self.stats['trial'] = self.agent_trial_count
@@ -68,7 +70,7 @@ class LearningAgent(Agent):
             qMax = max(self.q[state_id_].values())
         else:
             qMax = self.initial_q_value
-        print "max_over_a(): s'({}) = {}".format(state_, qMax)
+        #print "max_over_a(): s'({}) = {}".format(state_, qMax)
         return qMax
 
     def update_qvalue(self, state, action, reward, state_):
@@ -79,17 +81,17 @@ class LearningAgent(Agent):
         else:
             state_id = self.new_state(state)
             self.q[state_id][action] = reward
-        print "update_qvalue(): Updated the qvalues based on state {} id {}".format(state, state_id)
+        #print "update_qvalue(): Updated the qvalues based on state {} id {}".format(state, state_id)
 
     def choose_action(self, state):
         best_actions = self.possible_actions
         state_id = self.find_state_id(state)
         if state_id is not None and random.random() < self.epsilon:    # We know the state but sometimes we pick a random action
-            print "update_action(): Known state or explore for q-values {}".format(self.q[state_id])
+            #print "update_action(): Known state or explore for q-values {}".format(self.q[state_id])
             best_actions = [action for action, q in self.q[state_id].iteritems() if q == max(self.q[state_id].values())]
-            print "possible actions {} based on q-value {} for state {}".format(best_actions, self.q[state_id], state)
+            #print "possible actions {} based on q-value {} for state {}".format(best_actions, self.q[state_id], state)
         action = random.choice(best_actions)
-        print "choose_action(): Action to take {}".format(action)
+        #print "choose_action(): Action to take {}".format(action)
         return action
 
     def get_state(self):
@@ -111,7 +113,7 @@ class LearningAgent(Agent):
     # But I am currently in a new state (s'), so really what is passed into update_qvalue() is the previous s, a, r
     #
     def update(self, t):
-        print "***********************************\nupdate(): Iteration {}".format(self.iteration)
+        #print "***********************************\nupdate(): Iteration {}".format(self.iteration)
         # Gather inputs
         self.next_waypoint = self.planner.next_waypoint()  # from route planner, also displayed by simulator
         inputs = self.env.sense(self)

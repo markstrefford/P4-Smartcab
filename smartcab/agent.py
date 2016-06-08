@@ -45,6 +45,7 @@ class LearningAgent(Agent):
         success_rate = float(self.success_count) / float(self.agent_trial_count) * 100
         self.stats['cumulative_success_rate'] = success_rate
         self.summary_stats[self.agent_trial_count] = self.stats
+        self.summary_stats.to_csv('statistics.csv')
         print "***********************************" \
           "\nStatistics: Trial {}" \
           "\n{}" \

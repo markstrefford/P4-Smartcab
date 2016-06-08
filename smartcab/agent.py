@@ -17,9 +17,9 @@ class LearningAgent(Agent):
         self.q = dict()             # self.q[] is where we hold the actions and rewards, the state is the key from self.states[] (so typically an int!)
         self.iteration = 0
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
-        self.start_epsilon = 0.8          # If we know the state, go with it 80% of the time. Pick a random action 20% of the time
+        self.start_epsilon = 0.2          # If we know the state, go with it 80% of the time. Pick a random action 20% of the time
         self.epsilon = self.start_epsilon
-        self.start_alpha, self.start_gamma = 0.75, 0
+        self.start_alpha, self.start_gamma = 0.75, 0.5
         self.alpha, self.gamma = self.start_alpha, self.start_gamma
         self.initial_q_value = 3    # Set deliberately high compared to rewards in order to force the agent to try different actions until all have been tried
         self.policy = 'q'           # Can force a policy: 'q' = use q-learning, any other value will force a random action each time (useful for benchmarking later)
@@ -50,7 +50,7 @@ class LearningAgent(Agent):
         else:
             self.stats['success'] = 0
         self.summary_stats[self.agent_trial_count] = self.stats
-        self.summary_stats.to_csv('stats/statistics_gamma_2.csv')
+        self.summary_stats.to_csv('stats/statistics_epsilon_1.csv')
         print "***********************************" \
           "\nStatistics: Trial {}" \
           "\n{}" \
@@ -62,8 +62,8 @@ class LearningAgent(Agent):
         self.stats['gamma'] = self.gamma
 
     def update_learning_rates(self, trial, alpha, gamma, epsilon):
+        epsilon = epsilon / ((trial/25)+1)  # +1 to avoid divide/0 in first 25 runs!
         return alpha, gamma, epsilon
-        #return alpha, gamma, epsilon        # For now let's just return the standard values
 
     def set_initial_q(self):
         return self.initial_q_value
@@ -108,7 +108,7 @@ class LearningAgent(Agent):
     def choose_action(self, state):
         best_actions = self.possible_actions
         state_id = self.find_state_id(state)
-        if state_id is not None and random.random() < self.epsilon and self.policy == 'q':    # We know the state but sometimes we pick a random action, and the policy is q-value
+        if state_id is not None and random.random() > self.epsilon and self.policy == 'q':    # We know the state but sometimes we pick a random action, and the policy is q-value
             #print "update_action(): Known state or explore for q-values {}".format(self.q[state_id])
             best_actions = [action for action, q in self.q[state_id].iteritems() if q == max(self.q[state_id].values())]
             #print "possible actions {} based on q-value {} for state {}".format(best_actions, self.q[state_id], state)

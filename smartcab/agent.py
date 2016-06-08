@@ -50,7 +50,7 @@ class LearningAgent(Agent):
         else:
             self.stats['success'] = 0
         self.summary_stats[self.agent_trial_count] = self.stats
-        self.summary_stats.to_csv('stats/statistics_qvalues.csv')
+        self.summary_stats.to_csv('stats/statistics_decay_alpha_3.csv')
         print "***********************************" \
           "\nStatistics: Trial {}" \
           "\n{}" \
@@ -62,8 +62,8 @@ class LearningAgent(Agent):
         self.stats['gamma'] = self.gamma
 
     def update_learning_rates(self, trial, alpha, gamma, epsilon):
-        #return alpha/trial, gamma
-        return alpha, gamma, epsilon        # For now let's just return the standard values
+        return alpha/((trial/25)+1), gamma, epsilon   # Decay alpha over the trials
+        #return alpha, gamma, epsilon        # For now let's just return the standard values
 
     def set_initial_q(self):
         return self.initial_q_value

@@ -19,7 +19,7 @@ class LearningAgent(Agent):
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
         self.start_epsilon = 0.8          # If we know the state, go with it 80% of the time. Pick a random action 20% of the time
         self.epsilon = self.start_epsilon
-        self.start_alpha, self.start_gamma = 0.75, 0.5    # Start with a higher learning rate alpha
+        self.start_alpha, self.start_gamma = 0.75, 0
         self.alpha, self.gamma = self.start_alpha, self.start_gamma
         self.initial_q_value = 3    # Set deliberately high compared to rewards in order to force the agent to try different actions until all have been tried
         self.policy = 'q'           # Can force a policy: 'q' = use q-learning, any other value will force a random action each time (useful for benchmarking later)
@@ -50,7 +50,7 @@ class LearningAgent(Agent):
         else:
             self.stats['success'] = 0
         self.summary_stats[self.agent_trial_count] = self.stats
-        self.summary_stats.to_csv('stats/statistics_decay_alpha_3.csv')
+        self.summary_stats.to_csv('stats/statistics_gamma_2.csv')
         print "***********************************" \
           "\nStatistics: Trial {}" \
           "\n{}" \
@@ -62,7 +62,7 @@ class LearningAgent(Agent):
         self.stats['gamma'] = self.gamma
 
     def update_learning_rates(self, trial, alpha, gamma, epsilon):
-        return alpha/((trial/25)+1), gamma, epsilon   # Decay alpha over the trials
+        return alpha, gamma, epsilon
         #return alpha, gamma, epsilon        # For now let's just return the standard values
 
     def set_initial_q(self):

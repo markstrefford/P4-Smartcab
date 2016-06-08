@@ -17,7 +17,8 @@ class LearningAgent(Agent):
         self.q = dict()             # self.q[] is where we hold the actions and rewards, the state is the key from self.states[] (so typically an int!)
         self.iteration = 0
         self.prev_state, self.prev_action, self.prev_reward = None, None, 0
-        self.epsilon = 0.8          # If we know the state, go with it 80% of the time. Pick a random action 20% of the time
+        self.start_epsilon = 0.8          # If we know the state, go with it 80% of the time. Pick a random action 20% of the time
+        self.epsilon = self.start_epsilon
         self.start_alpha, self.start_gamma = 0.75, 0.5    # Start with a higher learning rate alpha
         self.alpha, self.gamma = self.start_alpha, self.start_gamma
         self.initial_q_value = 3    # Set deliberately high compared to rewards in order to force the agent to try different actions until all have been tried
@@ -44,20 +45,25 @@ class LearningAgent(Agent):
         self.success_count += self.stats['success']
         success_rate = float(self.success_count) / float(self.agent_trial_count) * 100
         self.stats['cumulative_success_rate'] = success_rate
+        if self.stats['success'] == True:
+            self.stats['success'] = 1
+        else:
+            self.stats['success'] = 0
         self.summary_stats[self.agent_trial_count] = self.stats
-        self.summary_stats.to_csv('statistics.csv')
+        self.summary_stats.to_csv('stats/statistics_qvalues.csv')
         print "***********************************" \
           "\nStatistics: Trial {}" \
           "\n{}" \
           "\nSuccess rate : {}%" \
           "\n***********************************".format(self.agent_trial_count, self.summary_stats, success_rate)
         self.stats=pd.Series(self.init_stats)
-        self.alpha, self.gamma = self.update_learning_rates(self.agent_trial_count, self.start_alpha, self.start_gamma)
+        self.alpha, self.gamma, self.epsilon = self.update_learning_rates(self.agent_trial_count, self.start_alpha, self.start_gamma, self.start_epsilon)
         self.stats['alpha'] = self.alpha    # As this and gamma vary between trials and not sure if the above takes original values!!
         self.stats['gamma'] = self.gamma
 
-    def update_learning_rates(self, trial, alpha, gamma):
-        return alpha/trial, gamma
+    def update_learning_rates(self, trial, alpha, gamma, epsilon):
+        #return alpha/trial, gamma
+        return alpha, gamma, epsilon        # For now let's just return the standard values
 
     def set_initial_q(self):
         return self.initial_q_value
